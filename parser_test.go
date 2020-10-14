@@ -237,9 +237,23 @@ func TestUnmarshal(t *testing.T) {
 	if project.Repositories[0].Url != "http://localhost:8081/repository/maven-private/" {
 		t.Errorf("repository[0] url does not match (expected: http://localhost:8081/repository/maven-private/, found: %s)", project.Repositories[0].Url)
 	}
-	// todo test properties
+	if len(project.Properties) != 2 {
+		t.Errorf("2 Properties expected, found: %d)", len(project.Properties))
+	}
+	v, exist := project.GetProperty("project.build.sourceEncoding")
+	if !exist {
+		t.Errorf("Get property 'project.build.sourceEncoding' not found")
+	} else {
+		if v != "UTF-8" {
+			t.Errorf("Properties 'project.build.sourceEncoding' expected with value 'UTF-8', found: %s)", v)
+		}
+	}
+
 	if len(project.DependencyManagement.Dependencies) != 1 {
 		t.Errorf("expecting 1 dependencies in management found %d", len(project.DependencyManagement.Dependencies))
+	}
+	if project.DependencyManagement.Dependencies == nil {
+		t.Errorf("DependencyManagement.Dependencies can't be nil")
 	}
 	if project.DependencyManagement.Dependencies[0].Type != "pom" {
 		t.Errorf("artifactId does not match (expected: My App, found: %s)", project.Name)

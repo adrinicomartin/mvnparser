@@ -42,7 +42,7 @@ type MavenProject struct {
 	Packaging            string               `xml:"packaging"`
 	Name                 string               `xml:"name"`
 	Repositories         []Repository         `xml:"repositories>repository"`
-	Properties           map[string]string    `xml:"properties"`
+	Properties           Properties           `xml:"properties"`
 	DependencyManagement DependencyManagement `xml:"dependencyManagement"`
 	Dependencies         []Dependency         `xml:"dependencies>dependency"`
 	Profiles             []Profile            `xml:"profiles"`
@@ -55,6 +55,35 @@ type Parent struct {
 	GroupId    string `xml:"groupId"`
 	ArtifactId string `xml:"artifactId"`
 	Version    string `xml:"version"`
+}
+
+type Properties map[string]string
+
+type propertyEntries struct {
+	Entries []propertyEntry `xml:",any"`
+}
+type propertyEntry struct {
+	XMLName xml.Name
+	Value   string `xml:",chardata"`
+}
+
+func (props *Properties) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var entries propertyEntries
+	if err := d.DecodeElement(&entries, &start); err != nil {
+		return err
+	}
+	for _, entry := range entries.Entries {
+		if *props == nil {
+			*props = make(Properties)
+		}
+		(*props)[entry.XMLName.Local] = entry.Value
+	}
+	return nil
+}
+
+type Property struct {
+	Key   string `xml:"name,attr"`
+	Value string `xml:",chardata"`
 }
 
 // Represent a dependency of the project
