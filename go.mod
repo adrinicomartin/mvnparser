@@ -1,3 +1,3 @@
-module github.com/creekorful/mvnparser
+module github.com/adrinicomartin/mvnparser
 
 go 1.14
