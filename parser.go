@@ -22,20 +22,27 @@
 
 package mvnparser
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+)
 
 // Represent a POM file
 type MavenProject struct {
-	XMLName      xml.Name     `xml:"project"`
-	ModelVersion string       `xml:"modelVersion"`
-	Parent       Parent       `xml:"parent"`
-	GroupId      string       `xml:"groupId"`
-	ArtifactId   string       `xml:"artifactId"`
-	Version      string       `xml:"version"`
-	Packaging    string       `xml:"packaging"`
-	Name         string       `xml:"name"`
-	Repositories []Repository `xml:"repositories>repository"`
-	//todo something like: Properties           map[string]string    `xml:"properties"`
+	XMLName              xml.Name             `xml:"project"`
+	ModelVersion         string               `xml:"modelVersion"`
+	Parent               Parent               `xml:"parent"`
+	GroupId              string               `xml:"groupId"`
+	ArtifactId           string               `xml:"artifactId"`
+	Version              string               `xml:"version"`
+	Packaging            string               `xml:"packaging"`
+	Name                 string               `xml:"name"`
+	Repositories         []Repository         `xml:"repositories>repository"`
+	Properties           map[string]string    `xml:"properties"`
 	DependencyManagement DependencyManagement `xml:"dependencyManagement"`
 	Dependencies         []Dependency         `xml:"dependencies>dependency"`
 	Profiles             []Profile            `xml:"profiles"`
@@ -104,4 +111,34 @@ type PluginRepository struct {
 	Id   string `xml:"id"`
 	Name string `xml:"name"`
 	Url  string `xml:"url"`
+}
+
+//Parse a pom.xml file and return the MavenProject representing it.
+func Parse(pomxmlPath string) (*MavenProject, error) {
+	f, err := os.Open(pomxmlPath)
+	if err != nil {
+		return nil, fmt.Errorf("can't open file %s, %v", pomxmlPath, err)
+	}
+	defer f.Close()
+
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("can't read file %s, %v", pomxmlPath, err)
+	}
+
+	var project MavenProject
+	if err := xml.Unmarshal(bytes, &project); err != nil {
+		log.Fatalf("unable to unmarshal pom file. Reason: %s", err)
+	}
+	return &project, nil
+}
+
+//GetProperty with a particular key. Case insensitive.
+func (mp *MavenProject) GetProperty(key string) (value string, exist bool) {
+	for k, v := range mp.Properties {
+		if strings.ToLower(k) == strings.ToLower(key) {
+			return v, true
+		}
+	}
+	return "", false
 }
